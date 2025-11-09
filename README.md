@@ -1,53 +1,76 @@
-# Gold Signal Trading Bot
+# Trading Bot
 
-Prototype for a gold (XAUUSD) trading research platform with FastAPI backend and React dashboard.
+This repository provides a minimal, fully-tested trading bot that implements a
+moving average crossover strategy. It includes utilities for loading market
+prices, generating trading signals, executing simulated trades, and evaluating
+performance. A Docker-based deployment workflow makes it possible to run the
+bot with a single command.
 
-## Project Structure
+## Project layout
 
 ```
-backend/
-  app/
-    main.py
-    config.py
-    models.py
-    schemas.py
-    services/
-    routers/
-  requirements.txt
-  Dockerfile
-frontend/
-  src/
-  package.json
-  Dockerfile
+.
+├── data/                  # Sample OHLCV data
+├── trading_bot/           # Bot implementation modules
+├── tests/                 # Automated unit tests (pytest)
+├── main.py                # Command-line interface
+├── Dockerfile             # Container definition for one-touch deployment
+├── deploy.sh              # Helper script to build and run the container
+└── Makefile               # Common development tasks
 ```
 
-## Getting Started
+## Getting started
 
-1. Ensure Docker and Docker Compose are installed.
-2. From the repository root run:
+1. **Create a virtual environment and install dependencies**
+
+   ```bash
+   make install
+   ```
+
+2. **Run the automated test suite**
+
+   ```bash
+   make test
+   ```
+
+3. **Execute the bot locally**
+
+   ```bash
+   make run
+   ```
+
+   The command prints a trade summary after running the moving average crossover
+   strategy against the sample dataset.
+
+## One-touch deployment
+
+The provided `deploy.sh` script builds the Docker image and runs it in a single
+step:
 
 ```bash
-docker-compose up --build
+./deploy.sh
 ```
 
-3. Access the frontend at http://localhost:5173 and backend docs at http://localhost:8000/docs.
+Pass an optional image name to tag the image differently:
 
-The default strategy `gold_sma_rsi_v1` is seeded automatically on startup.
-
-## Environment Variables
-
-Configure backend settings via `.env` if desired:
-
-```
-LIVE_MODE=false
-MT5_LOGIN=
-MT5_PASSWORD=
-MT5_SERVER=
+```bash
+./deploy.sh my-custom-image
 ```
 
-Frontend can override the API base URL with `VITE_API_URL`.
+The container executes the bot against the bundled sample data by default.
+Modify the `CMD` in the `Dockerfile` or override the command at runtime to point
+at different datasets or strategy parameters.
 
-## Future Work
+## Adding new data or strategies
 
-- Plug in Exness MT5 broker via `ExnessMT5Broker`.
-- Toggle live trading with `LIVE_MODE=true` once ready.
+* Place additional CSV files (with `timestamp, open, high, low, close, volume`)
+  inside the `data/` directory or supply an absolute path when running
+  `main.py`.
+* Implement new strategies in `trading_bot/strategy.py` (or additional modules)
+  and update `main.py` to expose new options.
+* Extend the test suite under `tests/` to cover any new behaviour.
+
+## License
+
+This project is licensed under the terms of the MIT License. See `LICENSE` for
+full details.
