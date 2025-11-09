@@ -1,17 +1,20 @@
-.PHONY: install test run format deploy
+.PHONY: install test run run-config-ui format deploy
 
 install:
-python -m venv .venv
-. .venv/bin/activate && pip install -U pip && pip install -r requirements-dev.txt
+	python -m venv .venv
+	. .venv/bin/activate && pip install -U pip && pip install -r requirements-dev.txt
 
 test:
-. .venv/bin/activate && pytest
+	. .venv/bin/activate && pytest
 
 run:
-. .venv/bin/activate && python main.py data/sample_data.csv
+	. .venv/bin/activate && python main.py data/sample_data.csv
+
+run-config-ui:
+	. .venv/bin/activate && python -m trading_bot.frontend
 
 format:
-. .venv/bin/activate && autopep8 --in-place --recursive trading_bot tests main.py
+	. .venv/bin/activate && autopep8 --in-place --recursive trading_bot tests main.py
 
 deploy:
-bash deploy.sh
+	bash deploy.sh

@@ -11,6 +11,7 @@ bot with a single command.
 ```
 .
 ├── data/                  # Sample OHLCV data
+├── config/                # Persisted configuration written by the UI
 ├── trading_bot/           # Bot implementation modules
 ├── tests/                 # Automated unit tests (pytest)
 ├── main.py                # Command-line interface
@@ -33,14 +34,29 @@ bot with a single command.
    make test
    ```
 
-3. **Execute the bot locally**
+3. **Launch the configuration UI (optional)**
+
+   ```bash
+   make run-config-ui
+   ```
+
+   The command starts a local Flask application at http://127.0.0.1:8000 that
+   surfaces a configuration screen. Use it to select a data vendor, capture API
+   credentials, and toggle between backtest, paper, or live execution modes.
+   Settings are saved to `config/config.json` and validated to ensure live
+   trading requirements (API keys, account identifiers, and risk controls) are
+   present before deployment.
+
+4. **Execute the bot locally**
 
    ```bash
    make run
    ```
 
    The command prints a trade summary after running the moving average crossover
-   strategy against the sample dataset.
+   strategy against the sample dataset. When a configuration file exists, the
+   bot can be extended to read the saved settings for data fetching and trading
+   controls.
 
 ## One-touch deployment
 
