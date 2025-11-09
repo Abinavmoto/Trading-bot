@@ -1,8 +1,9 @@
 # Trading Bot
 
 This repository provides a minimal, fully-tested trading bot that implements a
-moving average crossover strategy. It includes utilities for loading market
-prices, generating trading signals, executing simulated trades, and evaluating
+moving average crossover strategy alongside an XAUUSD-focused SMA + RSI
+strategy. It includes utilities for loading market prices, generating trading
+signals, executing simulated trades, exposing a JSON API, and evaluating
 performance. A Docker-based deployment workflow makes it possible to run the
 bot with a single command.
 
@@ -57,6 +58,43 @@ bot with a single command.
    strategy against the sample dataset. When a configuration file exists, the
    bot can be extended to read the saved settings for data fetching and trading
    controls.
+
+## Gold SMA+RSI Strategy
+
+The `gold_sma_rsi_v1` strategy evaluates gold (XAUUSD) price action using a
+combination of simple moving averages and a relative strength index filter. For
+each candle the strategy calculates:
+
+* **SMA20 / SMA50** (configurable) – short- and long-term trend filters.
+* **RSI14** (configurable period) – momentum filter ensuring trades occur during
+  balanced conditions.
+
+Signal rules (thresholds are configurable through `config/config.json`):
+
+* **BUY** when price > SMA(short) and SMA(short) > SMA(long) and `rsi_buy_min`
+  ≤ RSI ≤ `rsi_buy_max`.
+* **SELL** when price < SMA(short) and SMA(short) < SMA(long) and RSI ≥
+  `rsi_sell_min`.
+* Otherwise **HOLD**.
+
+Each evaluation produces a structured payload containing the timestamp, price,
+indicator values, and recommended action.
+
+## API Endpoints
+
+The existing Flask configuration UI now also exposes JSON endpoints suitable
+for powering dashboards or downstream services. Start the app via `make
+run-config-ui` and call the following routes:
+
+* `GET /api/signal/latest` – returns the most recent gold strategy signal using
+  the symbol, interval, and strategy parameters stored in `config/config.json`.
+* `POST /api/simulation/run` – accepts `{symbol, timeframe, start_date,
+  end_date, starting_balance}` and runs a backtest with the configured gold
+  strategy parameters, returning summary statistics, the equity and drawdown
+  curves, and a list of executed trades.
+
+Cross-origin requests from any `http://localhost:*` origin are permitted so a
+front-end application can consume these endpoints during development.
 
 ## One-touch deployment
 

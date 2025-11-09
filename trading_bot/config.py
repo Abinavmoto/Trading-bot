@@ -63,6 +63,15 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "base_currency": "USD",
         "risk_per_trade": 0.01,
     },
+    "strategy": {
+        "name": "gold_sma_rsi_v1",
+        "short_ma_length": 20,
+        "long_ma_length": 50,
+        "rsi_period": 14,
+        "rsi_buy_min": 45,
+        "rsi_buy_max": 65,
+        "rsi_sell_min": 60,
+    },
 }
 
 
@@ -84,6 +93,8 @@ def load_config(path: Path | None = None) -> Dict[str, Any]:
 
     with config_path.open("r", encoding="utf-8") as fh:
         data = json.load(fh)
+    if "strategy" not in data:
+        data["strategy"] = json.loads(json.dumps(DEFAULT_CONFIG["strategy"]))
     return data
 
 
@@ -106,6 +117,7 @@ def validate_config(config: Mapping[str, Any]) -> Dict[str, Any]:
     validated: Dict[str, Any] = {
         "data_provider": dict(DEFAULT_CONFIG["data_provider"]),
         "trade_settings": dict(DEFAULT_CONFIG["trade_settings"]),
+        "strategy": dict(DEFAULT_CONFIG["strategy"]),
     }
 
     provider_section = {**validated["data_provider"], **config["data_provider"]}
@@ -158,6 +170,28 @@ def validate_config(config: Mapping[str, Any]) -> Dict[str, Any]:
         raise ConfigError("Base currency must be configured (e.g. 'USD').")
 
     validated["trade_settings"] = trade_settings
+
+    strategy_section = {**validated["strategy"], **config.get("strategy", {})}
+    try:
+        strategy_section["short_ma_length"] = int(strategy_section.get("short_ma_length", 20))
+        strategy_section["long_ma_length"] = int(strategy_section.get("long_ma_length", 50))
+        strategy_section["rsi_period"] = int(strategy_section.get("rsi_period", 14))
+        strategy_section["rsi_buy_min"] = float(strategy_section.get("rsi_buy_min", 45))
+        strategy_section["rsi_buy_max"] = float(strategy_section.get("rsi_buy_max", 65))
+        strategy_section["rsi_sell_min"] = float(strategy_section.get("rsi_sell_min", 60))
+    except (TypeError, ValueError) as exc:
+        raise ConfigError("Strategy configuration contains invalid numeric values.") from exc
+
+    if strategy_section["short_ma_length"] <= 0 or strategy_section["long_ma_length"] <= 0:
+        raise ConfigError("Strategy moving average lengths must be positive integers.")
+    if strategy_section["short_ma_length"] >= strategy_section["long_ma_length"]:
+        raise ConfigError("Strategy short moving average must be less than the long moving average.")
+    if strategy_section["rsi_period"] <= 0:
+        raise ConfigError("Strategy RSI period must be positive.")
+    if strategy_section["rsi_buy_min"] >= strategy_section["rsi_buy_max"]:
+        raise ConfigError("Strategy RSI buy min must be lower than buy max.")
+
+    validated["strategy"] = strategy_section
     return validated
 
 

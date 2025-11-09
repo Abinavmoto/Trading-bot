@@ -8,6 +8,7 @@ import pandas as pd
 
 from .data import PriceData
 from .portfolio import Portfolio
+from .simulation import BacktestResult, run_backtest
 
 
 class Strategy(Protocol):
@@ -22,10 +23,13 @@ class TradingBot:
     strategy: Strategy
     portfolio: Portfolio
 
-    def run(self, price_data: PriceData) -> dict:
+    def run(self, price_data: PriceData) -> BacktestResult:
         """Execute the trading strategy against historical prices."""
 
-        closing_prices = price_data.frame["close"]
-        actions = self.strategy.generate_trading_actions(closing_prices)
-        self.portfolio.apply_signals(closing_prices, actions)
-        return self.portfolio.summary()
+        result = run_backtest(
+            price_data=price_data,
+            strategy=self.strategy,
+            starting_balance=self.portfolio.starting_cash,
+            unit_size=self.portfolio.unit_size,
+        )
+        return result

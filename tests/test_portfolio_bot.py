@@ -21,6 +21,6 @@ def test_trading_bot_summary() -> None:
     strategy = MovingAverageCrossStrategy(short_window=2, long_window=5)
     portfolio = Portfolio(starting_cash=1000, unit_size=1)
     bot = TradingBot(strategy=strategy, portfolio=portfolio)
-    summary = bot.run(data)
-    assert "total_return" in summary
-    assert isinstance(summary["trades"], list)
+    result = bot.run(data)
+    assert "total_return" in result.summary
+    assert isinstance(result.trades, list)

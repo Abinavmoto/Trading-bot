@@ -88,3 +88,37 @@ def rolling_window(series: pd.Series, window: int) -> Iterable[pd.Series]:
         raise ValueError("Window must be positive")
     for i in range(window, len(series) + 1):
         yield series.iloc[i - window : i]
+
+
+def resolve_data_path(symbol: str, interval: str) -> Path:
+    """Resolve a local CSV path for the requested symbol and interval."""
+
+    safe_symbol = symbol.replace("/", "").replace(" ", "").lower()
+    safe_interval = interval.replace(" ", "").lower()
+    candidate = Path("data") / f"{safe_symbol}_{safe_interval}.csv"
+    if candidate.exists():
+        return candidate
+    fallback = Path("data") / "sample_data.csv"
+    if fallback.exists():
+        return fallback
+    raise FileNotFoundError(
+        f"Could not locate data for {symbol} {interval}. Expected {candidate} or data/sample_data.csv."
+    )
+
+
+def load_symbol_data(symbol: str, interval: str) -> PriceData:
+    """Load data for a symbol/interval pair using naming conventions."""
+
+    path = resolve_data_path(symbol, interval)
+    return load_price_data(path)
+
+
+__all__ = [
+    "PriceData",
+    "DataValidationError",
+    "load_price_data",
+    "resample_prices",
+    "rolling_window",
+    "resolve_data_path",
+    "load_symbol_data",
+]
