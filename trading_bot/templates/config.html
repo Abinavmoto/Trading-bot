@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trading Bot Configuration</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      color: #1b2733;
+    }
+    header {
+      background: linear-gradient(135deg, #003c71, #0074d9);
+      color: #fff;
+      padding: 2rem 3rem 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2rem;
+    }
+    header p {
+      margin: 0;
+      opacity: 0.85;
+    }
+    main {
+      max-width: 960px;
+      margin: -2rem auto 3rem;
+      background: #fff;
+      padding: 2.5rem 3rem;
+      border-radius: 16px;
+      box-shadow: 0 12px 24px rgba(15, 35, 95, 0.15);
+    }
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-gap: 1.5rem 2rem;
+      align-items: start;
+    }
+    fieldset {
+      border: 1px solid #d0d7e1;
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: #f8fbff;
+    }
+    fieldset legend {
+      padding: 0 0.75rem;
+      font-weight: 600;
+    }
+    label {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.65rem;
+      border-radius: 8px;
+      border: 1px solid #b6c2d1;
+      font-size: 1rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0074d9;
+      box-shadow: 0 0 0 3px rgba(0, 116, 217, 0.15);
+    }
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+    button {
+      background: #0074d9;
+      border: none;
+      color: #fff;
+      padding: 0.85rem 1.8rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+    button:hover {
+      background: #005fb2;
+    }
+    .messages {
+      max-width: 960px;
+      margin: 1.5rem auto 0;
+      padding: 0 3rem;
+    }
+    .message {
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    .message.error {
+      background: #ffe8e6;
+      color: #a62918;
+      border: 1px solid #f3b0a7;
+    }
+    .message.success {
+      background: #e6ffed;
+      color: #1a7f37;
+      border: 1px solid #9be7b0;
+    }
+    .provider-description {
+      font-size: 0.85rem;
+      color: #48566a;
+      margin-top: 0.25rem;
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: #546275;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Trading Bot Configuration</h1>
+    <p>Configure data vendors, API credentials, and live trading safeguards before deploying.</p>
+  </header>
+
+  <section class="messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="message {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </section>
+
+  <main>
+    <form method="post">
+      <fieldset>
+        <legend>Market Data Provider</legend>
+        <label for="vendor">Vendor</label>
+        <select name="vendor" id="vendor">
+          {% for key, meta in providers.items() %}
+            <option value="{{ key }}" {% if config.data_provider.vendor == key %}selected{% endif %}>
+              {{ meta.label }}
+            </option>
+          {% endfor %}
+        </select>
+        <div class="provider-description">
+          {% set active = providers[config.data_provider.vendor] %}
+          {{ active.description }}
+        </div>
+
+        <label for="base_url">Base URL</label>
+        <input type="text" id="base_url" name="base_url" value="{{ config.data_provider.base_url }}" placeholder="https://">
+
+        <label for="api_key">API Key</label>
+        <input type="text" id="api_key" name="api_key" value="{{ config.data_provider.api_key }}">
+
+        <label for="api_secret">API Secret (if required)</label>
+        <input type="text" id="api_secret" name="api_secret" value="{{ config.data_provider.api_secret }}">
+
+        <label for="account_id">Account ID (live trading)</label>
+        <input type="text" id="account_id" name="account_id" value="{{ config.data_provider.account_id }}">
+
+        <label for="symbol">Default Symbol</label>
+        <input type="text" id="symbol" name="symbol" value="{{ config.data_provider.symbol }}" placeholder="EURUSD">
+
+        <label for="interval">Price Interval</label>
+        <input type="text" id="interval" name="interval" value="{{ config.data_provider.interval }}" placeholder="60min">
+      </fieldset>
+
+      <fieldset>
+        <legend>Trading Safeguards</legend>
+        <label for="mode">Execution Mode</label>
+        <select name="mode" id="mode">
+          {% for option in ["backtest", "paper", "live"] %}
+            <option value="{{ option }}" {% if config.trade_settings.mode == option %}selected{% endif %}>
+              {{ option|capitalize }}
+            </option>
+          {% endfor %}
+        </select>
+        <div class="meta">Live mode requires a funded broker account and completed API credentials.</div>
+
+        <label for="base_currency">Account Base Currency</label>
+        <input type="text" id="base_currency" name="base_currency" value="{{ config.trade_settings.base_currency }}" placeholder="USD">
+
+        <label for="risk_per_trade">Risk Per Trade (%)</label>
+        <input type="number" step="0.01" min="0" max="1" id="risk_per_trade" name="risk_per_trade" value="{{ '%.2f'|format(config.trade_settings.risk_per_trade) }}">
+        <div class="meta">Set this between 0 and 1 (e.g. 0.01 for 1% risk per trade).</div>
+
+        <div class="meta">Config file: {{ config_path }}</div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit">Save Configuration</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
