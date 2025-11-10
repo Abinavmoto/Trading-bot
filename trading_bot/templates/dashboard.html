@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gold Signal Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha384-Sa74z9JjHLnx9jbX7VsJu7lXXY0Au1Fh7HcJxZ3a6rNJ8EuQhNi94SmdIJgUdV2C" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>Gold SMA + RSI Dashboard</h1>
+      <p class="subheading">Real-time signal monitoring, simulation tools, and AI-generated insight.</p>
+    </header>
+
+    <main class="layout">
+      <section class="card signal-card" id="signal-card">
+        <h2>Current Signal</h2>
+        <div class="signal-status" id="signal-status">Loading...</div>
+        <dl class="metric-grid">
+          <div>
+            <dt>Symbol</dt>
+            <dd id="signal-symbol">—</dd>
+          </div>
+          <div>
+            <dt>Timeframe</dt>
+            <dd id="signal-timeframe">—</dd>
+          </div>
+          <div>
+            <dt>Timestamp</dt>
+            <dd id="signal-timestamp">—</dd>
+          </div>
+          <div>
+            <dt>Price</dt>
+            <dd id="signal-price">—</dd>
+          </div>
+          <div>
+            <dt>SMA (Short)</dt>
+            <dd id="signal-sma-short">—</dd>
+          </div>
+          <div>
+            <dt>SMA (Long)</dt>
+            <dd id="signal-sma-long">—</dd>
+          </div>
+          <div>
+            <dt>RSI</dt>
+            <dd id="signal-rsi">—</dd>
+          </div>
+        </dl>
+        <button id="refresh-signal" class="button secondary">Refresh Signal</button>
+      </section>
+
+      <section class="card simulation-card">
+        <h2>Run Simulation</h2>
+        <form id="simulation-form" class="form-grid">
+          <label>
+            <span>Start Date</span>
+            <input type="date" id="start-date" name="start_date" required />
+          </label>
+          <label>
+            <span>End Date</span>
+            <input type="date" id="end-date" name="end_date" required />
+          </label>
+          <label>
+            <span>Starting Balance (USD)</span>
+            <input type="number" id="starting-balance" name="starting_balance" min="0" step="100" value="10000" required />
+          </label>
+          <button type="submit" class="button">Run Simulation</button>
+        </form>
+        <div class="simulation-summary" id="simulation-summary" hidden>
+          <h3>Summary</h3>
+          <div class="summary-grid">
+            <div>
+              <h4>Final Balance</h4>
+              <p id="summary-final-balance">—</p>
+            </div>
+            <div>
+              <h4>Max Drawdown</h4>
+              <p id="summary-max-drawdown">—</p>
+            </div>
+            <div>
+              <h4>Win Rate</h4>
+              <p id="summary-win-rate">—</p>
+            </div>
+            <div>
+              <h4>Trades</h4>
+              <p id="summary-num-trades">—</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card ai-card">
+        <div class="ai-card-header">
+          <h2>AI Insight (GPT)</h2>
+          <span class="badge">Experimental · Not financial advice</span>
+        </div>
+        <p class="ai-disclaimer">AI Insight – Not financial advice. For research/educational use only.</p>
+        <div id="ai-content">
+          <p class="ai-bias" id="ai-bias">Waiting for AI insight…</p>
+          <p id="ai-explanation"></p>
+        </div>
+        <div class="ai-actions">
+          <button id="refresh-ai" class="button secondary">Refresh AI Insight</button>
+        </div>
+      </section>
+    </main>
+
+    <section class="card chart-card" id="chart-card" hidden>
+      <h2>Equity Curve</h2>
+      <canvas id="equity-chart" aria-label="Equity curve chart"></canvas>
+    </section>
+
+    <footer class="page-footer">
+      <p>Signals powered by the gold_sma_rsi_v1 strategy. AI output is advisory only.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+  </body>
+</html>

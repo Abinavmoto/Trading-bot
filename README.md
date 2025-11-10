@@ -92,9 +92,57 @@ run-config-ui` and call the following routes:
   end_date, starting_balance}` and runs a backtest with the configured gold
   strategy parameters, returning summary statistics, the equity and drawdown
   curves, and a list of executed trades.
+* `GET /api/ai-insight` – returns an advisory-only AI summary describing the
+  latest gold signal, recent market context, and a soft bias (lean buy / neutral
+  / lean sell). The endpoint gracefully falls back to a neutral response when no
+  OpenAI API key is configured.
 
 Cross-origin requests from any `http://localhost:*` origin are permitted so a
 front-end application can consume these endpoints during development.
+
+## Signal dashboard & AI assistant
+
+The Flask app now serves a lightweight dashboard at
+`http://127.0.0.1:8000/dashboard` that visualises the latest signal, runs
+simulations directly from the browser, and surfaces GPT-powered market colour.
+
+1. Export an OpenAI API key (optional – without it the AI card falls back to a
+   neutral placeholder):
+
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   ```
+
+   You can also customise the model via `OPENAI_MODEL` (defaults to
+   `gpt-4.1-mini`).
+
+2. Launch the UI/API server:
+
+   ```bash
+   make run-config-ui
+   ```
+
+3. Open the dashboard in a browser:
+
+   ```text
+   http://127.0.0.1:8000/dashboard
+   ```
+
+The dashboard fetches `GET /api/signal/latest`, renders AI commentary from
+`GET /api/ai-insight`, and posts to `/api/simulation/run` to plot an equity
+curve.
+
+Example curl commands:
+
+```bash
+curl http://127.0.0.1:8000/api/signal/latest
+
+curl http://127.0.0.1:8000/api/ai-insight
+
+curl -X POST http://127.0.0.1:8000/api/simulation/run \
+  -H "Content-Type: application/json" \
+  -d '{"symbol":"XAUUSD","timeframe":"60min","start_date":"2023-01-01","end_date":"2023-01-31","starting_balance":10000}'
+```
 
 ## One-touch deployment
 

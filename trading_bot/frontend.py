@@ -18,6 +18,7 @@ from trading_bot.config import (
     save_config,
     validate_config,
 )
+from trading_bot.ai_insight import FALLBACK_RESPONSE, generate_ai_insight, stub_headlines
 from trading_bot.data import PriceData, load_symbol_data
 from trading_bot.simulation import run_backtest
 from trading_bot.strategy import GoldSmaRsiStrategy
@@ -112,7 +113,9 @@ def create_app(config_path: Path | None = None) -> Flask:
             rsi_sell_min=float(strategy_cfg.get("rsi_sell_min", 60)),
         )
 
-    def _serialise_price_data(price_data: PriceData, start: pd.Timestamp | None, end: pd.Timestamp | None) -> PriceData:
+    def _serialise_price_data(
+        price_data: PriceData, start: pd.Timestamp | None, end: pd.Timestamp | None
+    ) -> PriceData:
         frame = price_data.frame
         if start:
             frame = frame.loc[frame.index >= start]
@@ -122,16 +125,30 @@ def create_app(config_path: Path | None = None) -> Flask:
             raise ValueError("No price data available for the requested period.")
         return PriceData(frame=frame)
 
-    @app.route("/api/signal/latest", methods=["GET"])
-    def latest_signal() -> tuple[Any, int] | Any:
+    def _load_context() -> tuple[Dict[str, Any], Dict[str, Any], PriceData, GoldSmaRsiStrategy]:
         config = load_config(resolved_path)
         provider_cfg = config.get("data_provider", DEFAULT_CONFIG["data_provider"])
+        price_data = load_symbol_data(provider_cfg["symbol"], provider_cfg["interval"])
+        strategy = _build_strategy(config)
+        return config, provider_cfg, price_data, strategy
+
+    @app.route("/dashboard", methods=["GET"])
+    def dashboard() -> str:
+        config = load_config(resolved_path)
+        provider_cfg = config.get("data_provider", DEFAULT_CONFIG["data_provider"])
+        return render_template(
+            "dashboard.html",
+            symbol=provider_cfg.get("symbol", "XAUUSD"),
+            timeframe=provider_cfg.get("interval", "60min"),
+        )
+
+    @app.route("/api/signal/latest", methods=["GET"])
+    def latest_signal() -> tuple[Any, int] | Any:
         try:
-            price_data = load_symbol_data(provider_cfg["symbol"], provider_cfg["interval"])
+            _, provider_cfg, price_data, strategy = _load_context()
         except (KeyError, FileNotFoundError) as exc:
             return jsonify({"error": str(exc)}), 400
 
-        strategy = _build_strategy(config)
         try:
             signal = strategy.latest_signal(price_data.frame["close"])
         except ValueError as exc:
@@ -207,6 +224,41 @@ def create_app(config_path: Path | None = None) -> Flask:
             "trades": trades_payload,
         }
         return jsonify(response)
+
+    @app.route("/api/ai-insight", methods=["GET"])
+    def ai_insight() -> Any:
+        fallback = dict(FALLBACK_RESPONSE)
+        try:
+            config, provider_cfg, price_data, strategy = _load_context()
+        except (FileNotFoundError, KeyError):
+            return jsonify(fallback)
+
+        try:
+            signal = strategy.latest_signal(price_data.frame["close"])
+        except ValueError:
+            fallback.update(
+                {
+                    "symbol": provider_cfg.get("symbol", "XAUUSD"),
+                    "timeframe": provider_cfg.get("interval", "60min"),
+                    "timestamp": None,
+                }
+            )
+            return jsonify(fallback)
+
+        recent_frame = price_data.frame.tail(60)
+        insight = generate_ai_insight(
+            signal=signal,
+            recent_frame=recent_frame,
+            strategy_config=config.get("strategy", DEFAULT_CONFIG["strategy"]),
+            headlines=stub_headlines(),
+        )
+        payload = {
+            **insight,
+            "symbol": provider_cfg.get("symbol", "XAUUSD"),
+            "timeframe": provider_cfg.get("interval", "60min"),
+            "timestamp": signal.timestamp.isoformat(),
+        }
+        return jsonify(payload)
 
     return app
 
