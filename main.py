@@ -35,15 +35,19 @@ def main(argv: Optional[list[str]] = None) -> dict:
         price_data = resample_prices(price_data, args.resample)
 
     bot = build_bot(args, price_data)
-    summary = bot.run(price_data)
+    result = bot.run(price_data)
+    summary = result.summary
     print("Trading summary:")
     for key, value in summary.items():
-        if key == "trades":
-            print("Trades:")
-            for trade in value:
-                print(f"  {trade['timestamp']} - {trade['action']} {trade['quantity']} @ {trade['price']}")
-        else:
-            print(f"{key}: {value}")
+        print(f"{key}: {value}")
+    if result.trades:
+        print("Trades:")
+        for trade in result.trades:
+            print(
+                "  "
+                + f"{trade.entry_time} - {trade.side} {trade.size} @ {trade.entry_price}"
+                + f" -> {trade.exit_price} (PnL: {trade.pnl})"
+            )
     return summary
 
 
